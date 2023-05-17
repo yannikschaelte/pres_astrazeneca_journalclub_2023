@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>YS AZ</title>
+
+    <meta name="description" content="PhD Defense">
+    <meta name="author" content="Yannik Schaelte">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="stylesheet" href="reveal.js/dist/reset.css">
+    <link rel="stylesheet" href="reveal.js/dist/reveal.css">
+    <link rel="stylesheet" href="reveal.js/dist/theme/white.css" id="theme">
+
+
+    <link rel="stylesheet" href="reveal.js/plugin/highlight/monokai.css" id="highlight-theme">
+
+    <link rel="stylesheet" href="ystyle.css">
+</head>
+
+
+
+<body>
+    <div class="reveal">
+        <div class="slides" id="id_slides">
+
+
+            <section data-background-color="#ffffff">
+                <img src="img/front.svg" alt="Front page" class="r-stretch" />
+
+
+            </section>
+
+            <section data-background="var(--main-color)" data-background-transition="zoom">
+                <h1>Overview</h1>
+                <ul>
+                    <li>Quantitative systems biology</li>
+                    <li>Amortized inference</li>
+                    <li>Missing data</li>
+                    <li>Mixed-effects modeling</li>
+                </ul>
+
+            </section>
+
+
+            <section>
+                <section>
+                    <h2>Biological processes are complicated</h2>
+                    <img src="img/cancer_model.svg" height="400px" /><img src="img/dividing_bg_transparent_small.gif"
+                        height="400px" /><br />
+                    <div><small>Fröhlich et al., Cell Systems, 2018, and Jagiella et al., Cell Systems, 2017</small>
+                    </div>
+
+                </section>
+
+
+                <section>
+                    <h2>Model types</h2>
+                    <img src="img/multiscale_models.svg" class="r-stretch" />
+                    <div style="text-align: right;"><small>based on Hasenauer et al., Coupl. Sys. 2015</small></div>
+
+                </section>
+            </section>
+
+
+            <section>
+                <h2>The inverse problem</h2>
+                <div class="r-stack">
+                    <img src="img/fw_bw_problem0.svg" />
+                    <img class="fragment" src="img/fw_bw_problem1.svg" />
+                    <img class="fragment" src="img/fw_bw_problem2.svg" />
+                </div>
+
+            </section>
+
+
+            <section>
+                <div class="r-stack" id="id_intro_div" style="padding: 0px; margin: 0px;">
+                    <script>
+                        var node = document.getElementById("id_intro_div");
+                        node.innerHTML += "<img src='img/intro90.svg'/>"
+                        var i;
+                        for (
+                            /*i = 91;*/
+                            i = 100;
+                            i <= 100;
+                            i++
+                        ) {
+                            node.innerHTML += "<img src='img/intro" + i + ".svg' class='fragment'/>"
+                        }  
+                    </script>
+                </div>
+
+
+            </section>
+
+
+            <section>
+                <h2>Software</h2>
+                <img src="img/tools.svg" class="r-stretch" />
+
+
+            </section>
+
+
+            <section data-background="var(--main-color)" data-background-transition="zoom">
+                <h1>Amortized inference</h1>
+            </section>
+
+
+            <section>
+                <section>
+                    <div class="r-stack">
+                        <img src="img_npe/datasets0.svg" width="600px" />
+                        <img class="fragment" src="img_npe/datasets.svg" width="600px" />
+                    </div>
+                    <h2 class="fragment">Fitting a model to many datasets?</h2>
+
+                </section>
+
+
+                <section>
+                    <h2>In brief</h2>
+                    <div style="text-align: left;">
+                        <ul style="list-style-type: '✗ ';">
+                            <li class="fragment">Classical (simulation-based) parameter estimation is case-based + slow
+                                +
+                                approximate</li>
+                            <li class="fragment">What if we want to fit the same model to multiple datasets?</li>
+                        </ul>
+                        <img class="fragment" style="text-align: center;" src="img_npe/datasets.svg" width="200px" />
+                        <ul style="list-style-type: '✓ ';">
+                            <li class="fragment">Learn a global estimator for the probabilistic mapping from data to
+                                parameters</li>
+                            <li class="fragment">Once trained, amortize inference on arbitrarily many datasets</li>
+                            <li class="fragment">Embed data via summary statistics model</li>
+                        </ul>
+                    </div>
+
+                </section>
+            </section>
+
+
+            <section>
+                <h2>Generative models</h2>
+                generate new data instances, $x\sim\pi(X|Y=y)$
+                <img src="img_npe/glow_faces.png" class="r-stretch" />
+                <div style="text-align: right;"><small>from: Kingma et al., NeurIPS 2019</small></div>
+                e.g.: GANs, VAEs, Flows
+
+            </section>
+
+
+            <section>
+                <section>
+                    <h2>Normalizing flows</h2>
+                    generative models based on an invertible transformation
+                    <img src="img_npe/normalizing_flows.png" class="r-stretch" />
+                    <div class="r-stack">
+                        <img class="fragment current-visible" src="img_npe/affine_coupling_block0.svg"
+                            style="background-color: #ffffff;" />
+                        <img class="fragment current-visible" src="img_npe/affine_coupling_block.svg"
+                            style="background-color: #ffffff;" />
+                        <img class="fragment current-visible" src="img_npe/affine_coupling_blocks_deep.svg"
+                            style="background-color: #ffffff;" />
+                    </div>
+
+
+                </section>
+
+                <section>
+                    <div style="text-align: left;">
+                        Let $z\sim\mathcal{N}(0, I)$ and $f: z\mapsto x$ bijective.
+                        Then via change of variable,s the pdf of $x=f(z)$ is given as
+                        $$p_x(x) = p_z(f^{-1}(x))\cdot|\text{det}(\tfrac{df^{-1}}{dx}(x))|.$$
+                        <ul>
+                            <li>in training, transform data points to simple distribution</li>
+                            <li>trained via negative log-likelihood</li>
+                            <li>afterwards, generate samples via $f^{-1}(z)$ with $z\sim\mathcal{N}(0,I)$</li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+
+
+            <section>
+                <h2>Posterior learning</h2>
+                <img src="img/fw_bw_problem2.svg" width="500px" />
+                <div style="text-align: left;">
+                    <ul>
+                        <li>parameters $\theta$</li>
+                        <li>observations $x$</li>
+                        <li>forward model $x\sim p(x|\theta) \Leftrightarrow x = g(\theta,\xi)$ with $\xi\sim
+                            p(\xi)$</li>
+                        <li>Bayesian posterior $p(\theta|x) \propto p(x|\theta)p(\theta)$</li>
+                        <br />
+                        <li>aim: find a NF $p_\phi(\theta|x) \approx p(\theta|x)$ $\forall \theta,x$</li>
+                    </ul>
+                </div>
+
+            </section>
+
+
+            <section>
+                <section>
+                    <h2>The method</h2>
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="text-align: left;">
+                            Parameterize $p_\phi$ in terms of a cINN given via a bijective
+                            $$f_\phi:\mathbb{R}^D\rightarrow\mathbb{R}^D,\quad\theta\mapsto z,$$
+                            which implements a normalizing flow between $\theta$ and a Gaussian latent variable
+                            $z$,
+                            $$\theta\sim p_\phi(\theta|x) \Leftrightarrow \phi = f^{-1}_\phi(z; x)\quad\text{with}\quad
+                            z\sim\mathcal{N}_D(z|0,I).$$
+                            <br />
+                            Seek neural network parameters $\hat\phi$ that minimize the KL divergence between true and
+                            approximate
+                            posterior $\forall x$
+                        </div>
+                        <img src="img_npe/affine_coupling_block_conditional.png" width="350px" />
+                    </div>
+
+                </section>
+
+
+                <section>
+                    <h2>The method</h2>
+                    <div style="text-align: left;">
+                        \begin{equation*}
+                        \begin{split}
+                        \hat\phi &= \arg\min_\phi\mathbb{E}_{p(x)}[\text{KL}(p(\theta|x)\!\mid\mid\!
+                        p_\phi(\theta|x))]\\
+                        &= \arg\max_\phi\iint p(x,\theta)\log p_\phi(\theta|x)dxd\theta\\
+                        &= \arg\max_\phi\iint p(x,\theta)(\log p(f_\phi(\theta;x)) + \log |\det J_{f_\phi}|)dxd\theta
+                        \end{split}
+                        \end{equation*}
+                        Approximate via Monte-Carlo sample:
+                        \begin{equation*}
+                        \begin{split}
+                        \hat\phi &= \arg\min_\phi\frac 1 M\sum_{m=1}^M(-\log p(f_\phi(\theta^{(m)};x^{(m)})) - \log
+                        |\det
+                        J_{f_\phi}^{(m)}|\\
+                        &= \arg\min_\phi\frac 1 M\sum_{m=1}^M\left(\frac{|f_\phi(\theta^{(m)};x^{(m)})|_2^2}{2} - \log
+                        |\det
+                        J_{f_\phi}^{(m)}|\right)
+                        \end{split}
+                        \end{equation*}
+                    </div>
+
+                </section>
+
+
+                <section>
+                    <h2>Learn summary statistics</h2>
+                    <div style="text-align: left;">
+                        If data $x_{1:N}$ are high-dimensional: Jointly learn a summary network $\tilde x =
+                        h_\psi(x_{1:N})$,
+                        giving
+                        the objective
+                        $$
+                        \hat\phi,\hat\psi = \arg\max_{\phi,\psi)}\mathbb{E}_{p(x,\theta,N)}[\log
+                        p_\phi(\theta|h_\psi(x_{1:N})]
+                        $$
+                        with Monte-Carlo estimate
+                        $$
+                        \hat\phi,\hat\psi = \arg\min_{\phi,\psi}\frac 1 M
+                        \sum_{m=1}^M\left(\frac{|f_\phi(\theta^{(m)};h_\psi(x_{1:N}^{(m)})|_2^2}{2} -
+                        \log|\det(J_{f_\phi}^{(m)})|\right)
+                        $$
+                    </div>
+
+                </section>
+            </section>
+
+
+            <section>
+                <h2>Amortized inference via INNs</h2>
+                you have to solve many similar problems? amortize the solution!
+                <img src="img_ame/bayesflow.svg" class="r-stretch" />
+                <div style="text-align:right;"><small>based on: Radev et al., 2021</small></div>
+
+            </section>
+
+
+            <section>
+                <h2>Training and inference</h2>
+                <div style="text-align: left">
+                    Training phase:<br />
+                    <ul>
+                        <li>create plenty of synthetic data $(y_i,\theta_i)\sim\pi(y,\theta)$</li>
+                        <li>train a cINN in forward mode</li>
+                    </ul>
+                    <br /><br />
+                    Inference phase:<br />
+                    <ul>
+                        <li>sample many latent $z_i\sim\pi(z)$</li>
+                        <li>run cINN backwards, $\theta_i = g(z_i; y_\text{obs}) \sim \pi(\theta|y_\text{obs})$</li>
+                    </ul>
+                    <br /><br />
+                    <ul style="list-style-type: '✓ ';">
+                        <li>fast + accurate amortized simulation-based Bayesian inference</li>
+                    </ul>
+                </div>
+
+            </section>
+
+
+            <section>
+                <div class="r-stack" id="id_sciml_div" style="padding: 0px; margin: 0px;">
+                    <script>
+                        var node = document.getElementById("id_sciml_div");
+                        node.innerHTML += "<img src='img/sciml1.svg'/>"
+                        var i;
+                        for (i = 2; i <= 5; i++) {
+                            node.innerHTML += "<img src='img/sciml" + i + ".svg' class='fragment'/>"
+                        }  
+                    </script>
+                </div>
+
+            </section>
+
+
+            <section data-background="var(--main-color)" data-background-transition="zoom">
+                <h1>Missing data</h1>
+
+            </section>
+
+
+            <section data-background-image="img_npe/missing_piece_puzzle.jpg" data-background-transition="zoom"
+                data-background-opacity="0.05">
+                <img src="img_npe/missing_datas.svg" class="r-stretch fragment" />
+                <br /><br />
+                <h2 style="text-align:left;">How to handle missing data in amortized inference?</h2>
+
+            </section>
+
+
+            <section>
+                <h2>Problem: INN cannot interpret the data</h2>
+                <img src="img_npe/deletion.png" class="r-stretch" />
+                (besides iid + time-series data of heterogeneous length)
+
+            </section>
+
+            <section>
+                <h2>Can we just impute missing values?</h2>
+                <div class="r-stack">
+                    <img src="img_npe/impute1.svg" width="80%" />
+                    <img src="img_npe/impute2.svg" width="80%" class="fragment" />
+                </div>
+
+            </section>
+
+            <section>
+                <h3>Inappropriate imputation can lead to biased results</h3>
+                <img src="img_npe/linear_interpolation.png" class="r-stretch" />
+
+            </section>
+
+            <section>
+                <h3>There are no free data</h3>
+                <div style="text-align: left;">
+                    <div style="font-size: 16pt;">
+                        Imputation means that instead of working with available data $x$, we try to reconstruct the full
+                        data $\bar
+                        x$,
+                        and estimate parameter probabilities $\pi(\theta|\bar x)$ instead of $\pi(\theta|x)$.
+                        However, the true full data are unknown, therefore we need to take uncertainty in $\bar x$ into
+                        account,
+                        considering a full distribution of values $\pi(\bar x|x)$.
+
+                        <p />
+                        We must either make up a distribution (introducing a bias), or use a faithful approximation
+                        $p(\bar x|x) = \pi(\bar x|x)$ where $\pi(\bar x|x)\pi(x) = \pi(\bar x, x)$.
+
+                        <p />
+                        However, if we integrate out over all possible realizations of full data, we obtain
+                        $\int \pi(\theta|\bar x)\pi(\bar x|x)d\bar x = \pi(\theta|x)$ (or similarly
+                        $\pi(\theta|x,\tau)$).
+                    </div>
+                    TLDR: With correct uncertainty quantification (which is hard), we just recover the same posterior.
+                </div>
+
+            </section>
+
+
+            <section>
+                <h2>Encode missing data</h2>
+                <img src="img_npe/concept_bayesflow_missingdata2.png" class="r-stretch" />
+
+            </section>
+
+
+
+
+
+            <section>
+                <h3>All approaches perform well on simple test problem</h3>
+                <img src="img_npe/icon_cr.svg" height="60px" /><br />
+                <img src="img_npe/CR3.png" class="r-stretch" />
+            </section>
+
+
+            <section>
+                <h3>Binary indicator augmentation more robust for ambiguous fill-in values</h3>
+                <img src="img_npe/Figure3.svg" class="r-stretch" />
+            </section>
+
+
+            <section>
+                <section>
+                    <h3>Positional encoding not robust on oscillatory data</h3>
+                    <img src="img_npe/icon_sin.svg" height="60px" /><br />
+                    <img src="img_npe/Osc_augment_time_quantile.png" class="r-stretch" />
+                </section>
+
+                <section>
+                    <img src="img_npe/Osc_convergence_log.svg" />
+                </section>
+            </section>
+
+
+            <section>
+                <h3>Variable dataset size as a special case of missing data</h3>
+                <img src="img_npe/Variable_length_loss.svg" width="48%" />
+                <img src="img_npe/Variable_length_rl.svg" width="48%" />
+                Augment by 0/1 improves performance due to better cost function approximation with individual-specific
+                missingness
+            </section>
+
+
+            <section>
+                <h3>Scales to complex dynamics</h3>
+                <img src="img_npe/icon_sir.svg" height="60px" /><br />
+                <img src="img_npe/SIR.png" class="r-stretch" />
+            </section>
+
+
+            <section>
+                <h3>Able to unravel parameter-dependent missingness</h3>
+                <img src="img_npe/CR11_missingness_par_augment01.png" class="r-stretch" />
+            </section>
+
+
+            <section data-background="var(--main-color)" data-background-transition="zoom">
+                <h1>Mixed-effects models</h1>
+
+            </section>
+
+
+            <section>
+                <h2>Mixed-Effects Modeling</h2>
+                <img src="img_ame/mixed_effects.svg" />
+                <div style="text-align: left;">
+                    <table style="border: none;" class="fragment">
+                        <tr style="border: none;">
+                            <td style="border: none;">dynamical model:</td>
+                            <td style="border: none;">$\dot x = f(x,\theta)$</td>
+                        </tr>
+                        <tr style="border: none;">
+                            <td style="border: none;">observables:</td>
+                            <td style="border: none;">$y = h(x, \theta) + \varepsilon$</td>
+                        </tr>
+                        <tr style="border: none;">
+                            <td style="border: none;">parameters:</td>
+                            <td style="border: none;">$\theta = A\alpha + B\beta,\quad\beta\sim\mathcal{N}(0,\Sigma)$
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+            </section>
+
+
+            <section>
+                <h2>Problem</h2>
+                <ul style="text-align: left;">
+                    <li>
+                        <b>estimate parameters:</b> maximize over $\alpha$ and $\Sigma$ the likelihood of data
+                        $y_\text{obs}$, marginalized over random effects $\beta$,
+                        $$\pi(y_\text{obs}|\alpha,\Sigma) =
+                        \prod_i\int\color{red}{\pi(y_i|\theta)}\pi(\theta|\alpha,\Sigma)d\theta$$
+                    </li>
+                    <li class="fragment" data-fragment-index="1"><b style="color: var(--main-color);">problem:
+                            evaluating these (high-dim) integrals is challenging</b>,<br />
+                        especially with many individuals<br /><br /></li>
+                </ul>
+                <img class="fragment" data-fragment-index="1" src="img_ame/compute_time.svg" />
+
+            </section>
+
+
+            <section>
+                <h2>An amortized approach</h2>
+                <ul style="text-align: left;">
+                    <li class="fragment" style="text-align: left;">
+                        <b>idea:</b> rewrite in terms of an <b>individual-specific posterior:</b>
+                        $$\begin{split}\pi(y_\text{obs}|\alpha,\Sigma) &=
+                        \prod_i\pi(y_i)\int\pi(\theta|y_i)\frac{\pi(\theta|\alpha,\Sigma)}{\pi(\theta)}d\theta \\&=
+                        \prod_i\pi(y_i)\mathbb{E}_{\theta\sim\color{red}{\pi(\theta|y_i)}}\left[\frac{\pi(\theta|\alpha,\Sigma)}{\pi(\theta)}\right]\end{split}$$
+                    </li>
+                    <li class="fragment">... and approximate the posterior using a <b
+                            style="color: var(--main-color);">neural density estimator</b> trained on synthetic data!
+                    </li>
+                </ul>
+            </section>
+
+
+            <section>
+                <h2>Evaluation</h2>
+                <div class="r-stack">
+                    <img class="fragment current-visible" data-fragment-index="0" src="img_ame/ame_results_fit.svg"
+                        height="250px" style="background-color: #ffffff;" />
+                    <img class="fragment current-visible" data-fragment-index="1" src="img_ame/ame_results_speedup.svg"
+                        height="250px" style="background-color: #ffffff;" />
+                    <img class="fragment" data-fragment-index="2" src="img_ame/ame_results_uncertainty.png"
+                        height="250px" style="background-color: #ffffff;" />
+                </div>
+
+                <div style="text-align: left;">
+
+                    <ul style="list-style-type: '✓ ';">
+                        <li>INN <b>fits the posterior</b> well</li>
+                        <li>after training once ($h$), the optimization is
+                            <b>very fast</b> ($s-min$)
+                        </li>
+                        <li>allows to <b>easily test hypotheses</b></li>
+                        <li>allows considering <b>stochastic models</b></li>
+                        <li>even <b>uncertainty analysis</b> easily possible</li>
+                    </ul>
+                </div>
+            </section>
+
+
+            <section data-background="var(--main-color)" data-background-transition="zoom" data-auto-animate>
+                <h1>Outlook</h1>
+            </section>
+
+
+            <section data-auto-animate>
+                <h1>Outlook</h1>
+                <ul>
+                    <li>applications in pharmacology and single-cell biology</li>
+                    <li>mechanistic insights to inform drug therapy</li>
+                    <li>combine with equation learning</li>
+                    <li>integrate image and tabular data in one framework</li>
+                    <li>large-scale modeling</li>
+                    <li>federated learning</li>
+                    <li>software</li>
+                </ul>
+
+
+            </section>
+
+
+            <section data-background="img/questions.jpg" data-background-opacity="0.3">
+                <div style="text-align: left; padding-top: 200px; padding-bottom: 200px;">
+                    <h1>Thanks! Questions?</h1>
+                </div>
+                <img src="img/socials.svg" width="60%" style="float: right;" />
+            </section>
+
+
+            <section data-background="var(--main-color)" data-background-transition="zoom" data-auto-animate>
+                <h1>Backup</h1>
+            </section>
+
+
+            <section>
+                <h2>Illustration of adjoint-hierarchical evaluation scheme</h2>
+                <img src="img_hier/alg_illustration4_v3.svg" class="r-stretch" />
+                <div style="text-align: right;">
+                    <small>from: Schmiester, Schälte et al., Bioinformatics 2020</small>
+                </div>
+            </section>
+
+
+            <section>
+                <h2>Convergence of standard and hierarchical optimization</h2>
+                <img src="img_backup/simulationStudy_correlation_relativeData_correlation_absoluteData_v2.svg" />
+                <div style="text-align: right;">
+                    <small>from: Schmiester, Schälte et al., Bioinformatics 2020</small>
+                </div>
+            </section>
+
+
+            <section>
+                <h2>Computational efficiency of standard and hierarchical optimization</h2>
+                <img src="img_backup/optimizer_comparism_with_speedup_small.svg" />
+                <div style="text-align: right;">
+                    <small>from: Schmiester, Schälte et al., Bioinformatics 2020</small>
+                </div>
+            </section>
+
+
+            <section>
+                <h2>Integration of heterogeneous data using hierarchical optimization</h2>
+                <img src="img_backup/results_withProtein_boxplot_BestAndWorst.svg" />
+                <div style="text-align: right;">
+                    <small>from: Schmiester, Schälte et al., Bioinformatics 2020</small>
+                </div>
+            </section>
+
+
+            <section>
+                <img src="img_pyabc/logo.svg" alt="pyABC logo black" /><br />
+                <span style="font-family: monospace"><a href="https://github.com/icb-dcm/pyabc"
+                        target="_blank">github.com/icb-dcm/pyabc</a></span><br />
+                <small>Klinger et al., Bioinformatics 2018 and Schälte et al., JOSS 2022</small>
+                <pre>
+                    <code data-trim data-noescape class="language-python">
+# specify problem and parallelization
+abc = ABCSMC(model, prior, distance, sampler)
+# pass data
+abc.new(db, data)
+# run it
+abc.run()
+                    </code>
+                </pre>
+                <img src="img_pyabc/points_extended.svg" style="width: 90%;" alt="Points" />
+
+            </section>
+
+
+            <section>
+                <h2>Parallel backends: 1 to 1,000s cores</h2>
+                <img src="img_pyabc/parallelization.svg" style="width: 40%" alt="Parallelization backends" />
+            </section>
+
+
+            <section>
+                <h2>Parallelization strategies</h2>
+                <small>Klinger et al., CMSB Proceedings 2017</small>
+                <img src="img_pyabc/strategies_illustration_small.svg" alt="Parallelization strategies" />
+            </section>
+
+
+            <section>
+                <img src="img_pyabc/logo_fmc_long.svg.png" height="70px" /><br />
+                <a href="https://fitmulticell.gitlab.io/">fitmulticell.gitlab.io</a><br />
+                a platform for modeling, simulation and inference for multi-scale multi-cellular models
+                <img src="img_pyabc/morpheus_gui.png" class="stretch" alt="Morpheus" />
+                <div style="text-align: right;">
+                    <small>Starruß et al., Bioinformatics 2014; Alamoudi et al., NIC Proc. 2022; Alamoudi et al.,
+                        bioRxiv
+                        2023</small>
+                </div>
+            </section>
+
+
+            <section>
+                <section data-transition="slide-in fade-out">
+                    <h2>Application example</h2>
+                    <img src="img_pyabc/tumor_kdes_small.gif" class="stretch" alt="Tumor KDEs" />
+                    <div class="conclusion" style="background-color: #ffffff">
+                        ABC worked where many other methods had failed.
+                    </div>
+                </section>
+
+
+                <section data-transition="fade-in slide-out">
+                    <h2>Application example</h2>
+                    <img src="img_pyabc/dflt_37.png" class="stretch" alt="Tumor final KDE" />
+                    <div class="conclusion">
+                        ABC worked where many other methods had failed.
+                    </div>
+                </section>
+
+
+                <section>
+                    <img class="r-stretch" src="img_pyabc/tumor_integration.svg" /><br />
+                    Uncertainty-aware predictions, easy data integration.
+                </section>
+
+                <section>
+                    <h2>Define summary statistics</h2>
+                    <img src="img_pyabc/tumor_sumstat.svg" class="stretch" alt="Tumor summary statistics" />
+                </section>
+
+
+                <section data-background="img_pyabc/server_white.svg">
+                    <span style="font-weight: bold; font-size: 1.2em;">
+                        <ul>
+                            <li>400 cores</li>
+                            <li>2 days</li>
+                            <li>1.8e6 simulations</li>
+                        </ul>
+                    </span>
+                </section>
+            </section>
+
+
+
+            <section>
+                <div style="text-align: left;">
+                    <h2>Theorem (Exact inference)</h2>
+                    <p>
+                        Using the <b>modified kernel</b> with $c>\pi(\bar y_\text{obs}|y,\theta)$
+                        $\forall y,\theta$, we sample from the <b>true posterior</b>
+                        \[\pi_\text{ABC}(\theta | \bar y_\text{obs}) = \pi(\theta | \bar y_\text{obs}) \propto
+                        \int\pi(\bar y_\text{obs}|y,\theta)p(y|\theta)\mathop{dy}\cdot\pi(\theta)\]
+                        assuming <b>noisy data</b> $\bar y_\text{obs}\sim\pi(\bar y|y,\theta)$.
+                    </p>
+                    <div>
+                        <ul>
+                            <li>non-trivial <b>noise</b> allows to do <b>exact likelihood-free</b>
+                                inference
+                            </li>
+                            <li>applicable to <b>stochastic models</b></li>
+                            <li><b>parameterized noise</b> model</li>
+                        </ul>
+                    </div>
+            </section>
+
+
+            <section>
+                <div style="text-align: left">
+                    <h2>Theorem (Optimal summary statistics)</h2>
+                    [...] Given $\lambda:\mathbb{R}^{n_\theta}\rightarrow\mathbb{R}^{n_\lambda}$ such that
+                    $\mathbb{E}_{\pi(\theta)}[|\lambda(\theta)|]<\infty$, define <b>summary statistics as the
+                        conditional
+                        expectation</b> $$s(y) :=\mathbb{E}[\lambda(\Theta)|Y=y]=\int
+                        \lambda(\theta)\pi(\theta|y)d\theta.$$
+                        Then, it holds
+                        $\left\lVert{\mathbb{E}_{\pi_{\text{ABC},\varepsilon}}[\lambda(\Theta)|s(y_\text{obs})] -
+                        s(y_\text{obs})}\right\rVert \leq \varepsilon$, and therefore
+                        \begin{equation}\label{eq:sreg_conv} \lim_{\varepsilon\rightarrow
+                        0}\mathbb{E}_{\pi_{\text{ABC},\varepsilon}}[\lambda(\Theta)|s(y_\text{obs}
+                        )]=\mathbb{E}[\lambda(\Theta)|Y=y_\text{obs}]. \end{equation}
+
+                        <p>
+                            In practice: Train regression model $s: y \mapsto \lambda(\theta) =
+                            (\theta^1,\ldots,\theta^k)$.
+                        </p>
+                </div>
+            </section>
+
+
+            <section>
+                <h2>Scale-normalizing and outlier-robust adaptive distances</h2>
+                <ul>
+                    <li>Integrate heterogeneous data scales via a scale-normalizing adaptive distance
+                        $$d(y,y_\text{obs}) = \left(\sum_{i_y}(r_{i_y} \cdot (y_{i_y} -
+                        y_{\text{obs},{i_y}}))^2\right)^{1/2}$$
+                        with weights adjusted in every ABC-SMC generation (Prangle, Bay. Ana., 2017)
+                    </li>
+                    <li>Problem: outliers can severely affect results
+                        <img src="img_robust/figure_motivation.svg" />
+                    </li>
+                    <li>Use <b>robust norms</b> (e.g. L1) with <b>adaptive weights</b> to normalize
+                        scales and down-weight outliers
+                    </li>
+
+                </ul>
+            </section>
+
+
+        </div>
+    </div>
+
+
+    <script src="reveal.js/dist/reveal.js"></script>
+    <script src="reveal.js/plugin/zoom/zoom.js"></script>
+    <script src="reveal.js/plugin/notes/notes.js"></script>
+    <script src="reveal.js/plugin/search/search.js"></script>
+    <script src="reveal.js/plugin/markdown/markdown.js"></script>
+    <script src="reveal.js/plugin/highlight/highlight.js"></script>
+    <script src="reveal.js/plugin/math/math.js"></script>
+    <script>
+        // More info about initialization & config:
+        // - https://revealjs.com/initialization/
+        // - https://revealjs.com/config/
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            center: true,
+            hash: true,
+
+            // Learn about plugins: https://revealjs.com/plugins/
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes,
+                RevealMath, RevealZoom]
+        });
+        Reveal.configure({ slideNumber: 'c' });
+        Reveal.configure({ showSlideNumber: 'none' });
+    </script>
+
+</body>
+
+</html>
